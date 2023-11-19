@@ -1,0 +1,97 @@
+Assignment 2        |   HY-360
+Giorgos Stivaktakis |   csd4300
+
+Απαντήστε τις παρακάτω ερωτήσεις σε 
+
+(1) Σχεσιακή Άλγεβρα  
+(2) Σχεσιακό Λογισμό Πεδίων
+(3) Σχεσιακό Λογισμό Πλειάδων 
+(4) SQL
+
+Video Club database struct :
+
+MOVIES      (MovieId, Title, Director, Studio, Format) 
+CUSTOMER    (CustomerId, Name, Address, Age, Balance) 
+RENTED      (CustomerId, MovieId)
+
+• Βρείτε τους τίτλους των ταινιών που έχει σκηνοθετήσει ο  Tarantino 
+  και είναι διαθέσιμες σε format “DVD” ή “VHS”.
+    
+    1. π Title(σ(Director=Tarantino)∧(Format='DVD' ∨ Format='VHS)(MOVIES))
+    
+    2. {T ∣ ∃M,D,S,F(MOVIES(M,T,D,S,F) ∧ D = 'Tarantino' ∧(F='DVD' ∨ F='VHS'))}
+    
+    3. {m.Title ∣ m ∈ MOVIES ∧ m.Director= 'Tarantino' ∧ (m.Format='DVD' ∨ m.Format='VHS')}
+    
+    4.  SELECT Title
+        FROM MOVIES
+        WHERE Director = 'Tarantino' 
+            AND Format IN ('DVD', 'VHS');
+
+• Βρείτε τους τίτλους των ταινιών που κανείς δεν έχει νοικιάσει
+
+    1. π Title((π(MovieId,Title(MOVIES))) - (π(Movieid(RENTED))))
+    
+    2. {T ∣ ∃M(MOVIES(M,T) ∧ ¬∃C(RENTED(C,M)))}
+    
+    3. {m.Title ∣ m ∈ MOVIES ∧ ¬∃r(r ∈ RENTED ∧ r.MovieId=m.MovieId)}
+    
+    4.  SELECT MOVIES.Title
+        FROM MOVIES
+        LEFT JOIN RENTED ON MOVIES.MovieId = RENTED.MovieId
+        WHERE RENTED.MovieId IS NULL;
+
+• Βρείτε τα ονόματα των πελατών που έχουν νοικιάσει όλες τις ταινίες 
+  του studio “Paramount”.
+
+    1. π Name(π CustomerID(π MovieId(σ Studio='Paramount'(MOVIES)) ⨝ RENTED) ⨝ CUSTOMER)
+    
+    2. {N ∣ ∃C,M(CUSTOMER(C,N) ∧ RENTED(C,M) ∧ ∃T,D,S,F(MOVIES(M,T,D,S,F) ∧ S='Paramount'))}
+    
+    3. {c.Name ∣c ∈ CUSTOMER ∧ ∃r(r ∈ RENTED ∧ r.CustomerId = c.CustomerId ∧ ∃m(m ∈ MOVIES ∧ 
+    m.MovieId = r.MovieId ∧ m.Studio= 'Paramount'))}
+    
+    4.  SELECT DISTINCT CUSTOMER.Name
+        FROM CUSTOMER
+        JOIN RENTED ON CUSTOMER.CustomerId = RENTED.CustomerId
+        JOIN MOVIES ON RENTED.MovieId = MOVIES.MovieId
+        WHERE MOVIES.Studio = 'Paramount';
+
+
+• Βρείτε τον πελάτη  με τις  μεγαλύτερες οφειλές  (Balance) στο  video club.
+
+    1. top 1(SORT Balance DESC(π CustomerId,Name,Balance(CUSTOMER)))
+    
+    2. {N ∣ ∃C,A,B(CUSTOMER(C,N,A,B) ∧ ¬∃C ',A',B'(CUSTOMER(C',N',A',B') ∧ 'B'>B))}
+    
+    3. {c.Name ∣ c ∈ CUSTOMER ∧ ¬∃c2(c2 ∈ Customer ∧ c2.Balance > c.Balance)}
+    
+    4.  SELECT Name
+        FROM CUSTOMER
+        ORDER BY Balance DESC
+        LIMIT 1;
+
+
+• Βρείτε τα ζεύγη ονομάτων πελατών που είναι  μεταξύ  20 και  30 ετών 
+  και οι οποίοι έχουν νοικιάσει την ίδια ταινία.
+
+    1. π C1.Name,C2.Name(ρC1(π CustomerId,Name,MovieId((σ Age≥20∧Age≤30(CUSTOMER))⋈ RENTED))⋈ 
+            C1.MovieId=C2.MovieId ∧ C1.CustomerId≠C2.CustomerId 
+            ρC2(π CustomerId,Name,MovieId((σ Age≥20∧Age≤30(CUSTOMER))⋈ RENTED)))
+    
+    2.{N1,N2 ∣ ∃C1,A1,C2,A2,M(CUSTOMER(C1,N1,A1) ∧ CUSTOMER(C2,N2,A2) ∧ C1≠C2 ∧ (A1≥20) ∧ (A1≤30) ∧ 
+            (A2≥20) ∧ (A2≤30) ∧ RENTED(C1,M) ∧ RENTED(C2,M))}
+    
+    3. {(c1.Name,c2.Name) ∣ c1 ∈ CUSTOMER ∧ c2 ∈ CUSTOMER ∧ c1.CustomerId≠c2.CustomerId
+            ∧ c1.Age≥20 ∧ c1.Age≤30 ∧ c2.Age≥20 ∧ c2.Age≤30 ∧ ∃r1 ,r2(r1 ∈ RENTED ∧ r2 ∈ RENTED 
+            ∧ r1.MovieId=r2.MovieId ∧ r1.CustomerId=c1.CustomerId ∧ r2.CustomerId=c2.CustomerId)}
+    
+    4.  SELECT DISTINCT C1.Name, C2.Name
+        FROM CUSTOMER C1
+        JOIN RENTED R1 ON C1.CustomerId = R1.CustomerId
+        JOIN RENTED R2 ON R1.MovieId = R2.MovieId
+        JOIN CUSTOMER C2 ON R2.CustomerId = C2.CustomerId
+            AND C1.CustomerId != C2.CustomerId              // Den eimai sigouros an xreiazete auto
+        WHERE C1.Age BETWEEN 20 AND 30
+            AND C2.Age BETWEEN 20 AND 30
+            AND C1.CustomerId != C2.CustomerId;
