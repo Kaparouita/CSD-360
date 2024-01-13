@@ -1,19 +1,21 @@
-package repositories;
+package cmd;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.stream.Collectors;
+import repositories.Database;
+import models.Motorcycle;
 
 public class Main {
 
     public static void main(String[] args) {
         // Initialize database
-        initializeDatabase();
+        Database db = new Database();
+        db.connect();
+        db.initializeDatabase();
+
+        // Create a new motorcycle
+        Motorcycle motorcycle = new Motorcycle("blue","brand", "CBR500R","AA1231", 5000, 50);
+        
+        // Save the motorcycle to the database
+        db.saveVehicle(motorcycle);
     }
 
 }

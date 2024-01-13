@@ -6,23 +6,45 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.annotation.WebServlet;
 import java.io.IOException;
+import java.io.BufferedReader;
+import com.google.gson.Gson;
+import models.User;
+import repositories.Database;
+
 
 
 @WebServlet("/user")
 public class UserServlet extends HttpServlet {
+    Database db = new Database();
+    
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String name = request.getParameter("name");
-        String email = request.getParameter("email");
+        StringBuilder sb = new StringBuilder();
+        String line;
 
-        // Here, you would typically save these details to a database.
-        // For demonstration, let's just print them to the server console.
-        System.out.println("Registering user: Name = " + name + ", Email = " + email);
+        try (BufferedReader reader = request.getReader()) {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        }
 
-        response.setContentType("text/html");
-        response.getWriter().println("<p>User " + name + " registered successfully!</p>");
+        String jsonData = sb.toString();
+
+        Gson gson = new Gson();
+        User user = gson.fromJson(jsonData, User.class);
+
+        // Now, you have a User object populated with JSON data
+        System.out.println("Registering user: Name = " + user.getFirstName() + ", Email = " + user.getEmail());
+
+        // Save user to database, etc.
+        db.saveUser(user);
+
+
+        response.setContentType("application/json");
+        response.getWriter().println(gson.toJson(user));
     }
+
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

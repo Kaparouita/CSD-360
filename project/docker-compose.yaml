@@ -1,0 +1,26 @@
+version: '3.1'
+
+services:
+
+  360_db:
+    image: 'postgres:latest'
+    container_name: '360_db'
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: maou
+      POSTGRES_PASSWORD: maou
+      POSTGRES_DB: 360
+
+  # tomcat:
+  #   image: tomcat:latest
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./webapps:/usr/local/tomcat/webapps
+  #   environment:
+  #     - CATALINA_OPTS=-Xms512M -Xmx1024M
+
+volumes:
+  dbdata:
