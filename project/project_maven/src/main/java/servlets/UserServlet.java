@@ -48,8 +48,14 @@ public class UserServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("text/html");
-        response.getWriter().println("<p>GET request received!</p>");
+        int id = Integer.parseInt(request.getParameter("id"));
+        
+        Gson gson = new Gson();
+        User user = db.getUser(id);
+        String json = gson.toJson(user);
+
+        response.setContentType("application/json");
+        response.getWriter().println(json);
     }
 
 }

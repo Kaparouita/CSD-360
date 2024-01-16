@@ -17,13 +17,16 @@ CREATE TABLE IF NOT EXISTS Vehicle (
     kilometers INT,
     color VARCHAR(255),
     type VARCHAR(20),
-    dailyCost INT
+    dailyCost INT,
+    isRented BOOLEAN,
+    status VARCHAR(20)
 );
 CREATE TABLE IF NOT EXISTS Car(
     vehicle_id INT PRIMARY KEY,
     licensePlate VARCHAR(50),
     carType VARCHAR(50),
-    numberOfSeats INT
+    numberOfSeats INT,
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
 );
 CREATE TABLE IF NOT EXISTS Motorcycle (
     vehicle_id INT PRIMARY KEY,
@@ -44,8 +47,11 @@ CREATE TABLE IF NOT EXISTS Rental (
     rent_id SERIAL PRIMARY KEY,
     vehicle_id INT,
     user_id INT,
-    returnDate DATE,
+    rentDate TIMESTAMP,
+    returnDate TIMESTAMP,
     rentStatus VARCHAR(50),
+    ensurance BOOLEAN,
+    totalCost INT,
     FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) 
 );

@@ -1,6 +1,7 @@
 package models;
 
 public class User {
+    private int id;
     private String username;
     private String password;
     private String email;
@@ -10,6 +11,7 @@ public class User {
     private String phoneNumber;
     private String driverLicense;
     private String creditCardNumber;
+    private int[]  rentIds;
     
 
     public User(String username, String password, String email, String firstName, String lastName, String address, String phoneNumber, String driverLicense, String creditCardNumber) {
@@ -23,6 +25,39 @@ public class User {
         this.driverLicense = driverLicense;
         this.creditCardNumber = creditCardNumber;
 
+    }
+
+    public void addRentId(int rentId){
+        int[] temp = new int[rentIds.length+1];
+        for(int i=0;i<rentIds.length;i++){
+            temp[i]=rentIds[i];
+        }
+        temp[rentIds.length]=rentId;
+        rentIds=temp;
+    }
+
+    public int[] getRentIds() {
+        return rentIds;
+    }
+
+    public void removeRentId(int id){
+        int[] temp = new int[rentIds.length-1];
+        int j=0;
+        for(int i=0;i<rentIds.length;i++){
+            if(rentIds[i]!=id){
+                temp[j]=rentIds[i];
+                j++;
+            }
+        }
+        rentIds=temp;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public User(String driverLicense){

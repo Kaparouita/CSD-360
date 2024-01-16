@@ -1,23 +1,47 @@
 package models;
 
+
+import java.sql.Timestamp;
+
 public abstract class Vehicle {
     
+    private int id;
     private String color;
     private String brand;
     private String model;
     private String type; // car, truck, motorcycle, etc.  
     private int kilometers;
-    private int dailyCost;  
+    private int dailyCost;
+    private Boolean isRented;
+    private String status; // damaged, in repair, etc.
     
-    public Vehicle(String color,  String brand, String model, String type, int kilometers, int dailyCost) {
+    public Vehicle(String color,  String brand, String model, String type, int kilometers, int dailyCost ,Boolean isRented, String status) {
         this.color = color;
         this.brand = brand;
         this.model = model;
         this.type = type;
         this.kilometers = kilometers;
         this.dailyCost = dailyCost;
+        this.isRented = isRented;
+        this.status = status;
     }
 
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getColor() {
         return color;
@@ -67,5 +91,12 @@ public abstract class Vehicle {
         return dailyCost;
     }
 
+    public void setIsRented(Boolean isRented) {
+        this.isRented = isRented;
+    }
+
+    public Boolean getIsRented() {
+        return isRented;
+    }
 }
 

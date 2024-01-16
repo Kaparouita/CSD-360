@@ -2,6 +2,12 @@ package cmd;
 
 import repositories.Database;
 import models.Motorcycle;
+import models.User;
+import models.Rent;
+
+import java.sql.Timestamp;
+import java.sql.Date;
+import java.util.List;
 
 public class Main {
 
@@ -11,11 +17,13 @@ public class Main {
         db.connect();
         db.initializeDatabase();
 
-        // Create a new motorcycle
-        Motorcycle motorcycle = new Motorcycle("blue","brand", "CBR500R","AA1231", 5000, 50);
-        
-        // Save the motorcycle to the database
-        db.saveVehicle(motorcycle);
+//        db.initDbWithRandomData();
+
+//        List<Motorcycle> motorcycleList =  db.getMotorcycleList(true);
+//        for (Motorcycle motorcycle : motorcycleList) {
+//            System.out.printf("%d : %b", motorcycle.getId(), motorcycle.getIsRented());
+//            System.out.println();
+    System.out.println( db.calculateMaxRentTime("car"));
     }
 
 }
