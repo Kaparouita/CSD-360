@@ -96,11 +96,11 @@ public class Database {
     }
     
 
-    public void saveUser(User user) {
+    public User saveUser(User user) {
         String SQL = "INSERT INTO users(username, password, email, firstname, lastname, address, phonenumber, driverlicense, creditcardnumber,age) VALUES(?,?,?,?,?,?,?,?,?,?)";
-    
+
         try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+             PreparedStatement pstmt = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, user.getUsername());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
@@ -112,9 +112,18 @@ public class Database {
             pstmt.setString(9, user.getCreditCardNumber());
             pstmt.setInt(10, user.getAge());
             pstmt.executeUpdate();
+
+            ResultSet rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                int generatedId = rs.getInt(1);
+                user.setId(generatedId);
+            }
+
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
+            return null;
         }
+        return user;
     }
 
     public User getUser(int id){
@@ -141,6 +150,7 @@ public class Database {
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
+            return null;
         }
         return user;
     }

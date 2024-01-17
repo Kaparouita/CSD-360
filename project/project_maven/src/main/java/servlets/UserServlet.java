@@ -38,7 +38,11 @@ public class UserServlet extends HttpServlet {
         System.out.println("Registering user: Name = " + user.getFirstName() + ", Email = " + user.getEmail());
 
         // Save user to database, etc.
-        db.saveUser(user);
+        user = db.saveUser(user);
+        if (user == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid user data");
+            return;
+        }
 
 
         response.setContentType("application/json");
@@ -52,6 +56,10 @@ public class UserServlet extends HttpServlet {
         
         Gson gson = new Gson();
         User user = db.getUser(id);
+        if (user == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid user id");
+            return;
+        }
         String json = gson.toJson(user);
 
         response.setContentType("application/json");
