@@ -79,25 +79,25 @@ public class Database {
     }
 
     public void initDbWithRandomData(){
-        saveUser(new User("username", "password", "email", "firstname", "lastname", "address", "phonenumber", "driverlicense", "creditcardnumber"));
+        saveUser(new User("username", "password", "email", "firstname", "lastname", "address", "phonenumber", "driverlicense", "creditcardnumber",20));
        
        for (int i = 0; i < 3; i++) {
             saveVehicle(new Motorcycle("color", "brand", "model", "licensePlate", 0, 40, false, "available"));
-            saveVehicle(new Car("color", "brand", "model", "carType", "type", 0, "licensePlate", 0, 60, false, "available"));
-            saveVehicle(new Bicycle("color", "brand", "model", "type", "uni543mr", 0, 10, false, "available"));
-            saveVehicle(new Scooter("color", "brand", "model", "type", "uni543mer", 0, 15, false, "available"));
+            saveVehicle(new Car("color", "brand", "model", "carType", "car", 0, "licensePlate", 0, 60, false, "available"));
+            saveVehicle(new Bicycle("color", "brand", "model", "bicycle", "uni543mr", 0, 10, false, "available"));
+            saveVehicle(new Scooter("color", "brand", "model", "scooter", "uni543mer", 0, 15, false, "available"));
         }
         for (int i = 0; i < 3; i++) {
             saveVehicle(new Motorcycle("color", "brand", "model", "licensePlate", 0, 25, true,"damaged"));
-            saveVehicle(new Car("color", "brand", "model", "carType", "type", 0, "licensePlate", 0, 30, true,"available"));
-            saveVehicle(new Bicycle("color", "brand", "model", "type", "uniq432", 0, 5, true,"available"));
-            saveVehicle(new Scooter("color", "brand", "model", "type", "uniqu423", 0, 5, true,"available"));
+            saveVehicle(new Car("color", "brand", "model", "carType", "car", 0, "licensePlate", 0, 30, true,"available"));
+            saveVehicle(new Bicycle("color", "brand", "model", "bicycle", "uniq432", 0, 5, true,"available"));
+            saveVehicle(new Scooter("color", "brand", "model", "scooter", "uniqu423", 0, 5, true,"available"));
         }
     }
     
 
     public void saveUser(User user) {
-        String SQL = "INSERT INTO users(username, password, email, firstname, lastname, address, phonenumber, driverlicense, creditcardnumber) VALUES(?,?,?,?,?,?,?,?,?)";
+        String SQL = "INSERT INTO users(username, password, email, firstname, lastname, address, phonenumber, driverlicense, creditcardnumber,age) VALUES(?,?,?,?,?,?,?,?,?,?)";
     
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(SQL)) {
@@ -110,6 +110,7 @@ public class Database {
             pstmt.setString(7, user.getPhoneNumber());
             pstmt.setString(8, user.getDriverLicense());
             pstmt.setString(9, user.getCreditCardNumber());
+            pstmt.setInt(10, user.getAge());
             pstmt.executeUpdate();
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
@@ -133,7 +134,8 @@ public class Database {
                     rs.getString("address"),
                     rs.getString("phonenumber"),
                     rs.getString("driverlicense"),
-                    rs.getString("creditcardnumber")
+                    rs.getString("creditcardnumber"),
+                    rs.getInt("age")
                 );
                 user.setId(rs.getInt("user_id"));
             }
@@ -394,10 +396,11 @@ public class Database {
         return scooters;
     }
 
-    public void rentVehicle(Rent rent) {
+    public String rentVehicle(Rent rent) {
         String SQL = "INSERT INTO rental(user_id,vehicle_id,rentDate,returnDate,rentStatus,ensurance,totalCost) VALUES(?,?,?,?,?,?,?)";
         String SQLvehicle = "UPDATE vehicle SET isRented = true WHERE vehicle_id = ?";
         String SQLgetVehicle = "SELECT * FROM vehicle WHERE vehicle_id = ?";
+        String resp= "";
 
         try (Connection conn = connect();
             PreparedStatement pstmt = conn.prepareStatement(SQL);
@@ -410,46 +413,63 @@ public class Database {
             pstmt.setString(5, "rented");
             pstmt.setBoolean(6, rent.getEnsurance());
 
+            Vehicle vehicle = getVehicle(rent.getVehicleId());
+            User user = getUser(rent.getUserId());
+            
+            if((vehicle instanceof Car || vehicle instanceof Motorcycle )&& (user.getAge() < 18 || user.getDriverLicense() == null)){
+                return "You are not allowed to rent a car or motorcycle";
+            }else if (user.getAge() < 16){
+                return "You are not allowed to rent a bicycle or scooter";
+            }else if (user.getCreditCardNumber() == null){
+                return "You need to add a credit card to rent a vehicle";
+            }
+
             pstmtvehicle.setInt(1, rent.getVehicleId());
-            pstmtvehicle.executeUpdate();
+            
 
             pstmtgetVehicle.setInt(1, rent.getVehicleId());
             ResultSet rs = pstmtgetVehicle.executeQuery();
             if (rs.next()) {
+                if(rs.getString("status").equals("damaged")){
+                    return "Vehicle is damaged";
+                }else if (rs.getBoolean("isRented")){
+                    return "Vehicle is in rented";
+                }
+
                 int dailyCost = rs.getInt("dailyCost");
                 int totalFee = calculateFee(rent.getRentDate(), rent.getReturnDate(), dailyCost);
                 if (rent.getEnsurance()) {
                     totalFee += 100; // ensurance fee
                 }
                 //!TODO : print total fee
+                resp += "Total fee: " + totalFee+"\n";
                 System.out.println("Total fee: " + totalFee);
                 pstmt.setInt(7, totalFee);
-                System.out.println("Rent successful!");
             }
 
+            pstmtvehicle.executeUpdate();
             pstmt.executeUpdate();
 
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
         }
+        resp += "Rent successful!";
+        return resp;
     }
 
     private int calculateFee(Timestamp rentDateTimestamp, Timestamp returnDateTimestamp, int dailyCost){
-
-
         LocalDate rentDate = rentDateTimestamp.toLocalDateTime().toLocalDate();
         LocalDate returnDate = returnDateTimestamp.toLocalDateTime().toLocalDate();
-
         long daysBetween = ChronoUnit.DAYS.between(rentDate, returnDate);
-
         int totalFee = (int) daysBetween * dailyCost;
-
         return totalFee;
     }
-    public void returnVehicle(int rent_id){
+
+    public String returnVehicle(int rent_id){
         String SQLrent = "SELECT * FROM rental WHERE rent_id = ? AND rentStatus = 'rented'";
         String SQLvehicle = "UPDATE vehicle SET isRented = false WHERE vehicle_id = ? ";
         String SQL = "UPDATE rental SET rentStatus = 'returned', totalCost = ? WHERE rent_id = ?";
+        String resp = "";
 
         try (Connection conn = connect();
             PreparedStatement pstmt = conn.prepareStatement(SQL);
@@ -468,6 +488,7 @@ public class Database {
                 if (exccedTime < 0) {
                     int extrafee = exccedTime * 10;
                     System.out.println("The extra fee for late return is : " + extrafee+"  late for "+ -1*exccedTime+" hours");
+                    resp = "The extra fee for late return is : " + extrafee+"  late for "+ -1*exccedTime+" hours\n";
                     pstmt.setInt(1, rent.getInt("totalCost") + extrafee);
                 }
                 pstmtvehicle.setInt(1, vehicle_id);
@@ -478,7 +499,10 @@ public class Database {
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
+            return ex.getMessage();
         }
+        resp += "Vehicle returned successfully!";
+        return resp;
     }
 
     private int exccedTime(Timestamp currDate, Timestamp returnDate){
@@ -624,6 +648,187 @@ public class Database {
             System.out.println(ex.getMessage());
         }
         return averageRentTime;
+    }
+
+    public Vehicle getVehicle(int vehicle_id){
+        String SQL = "SELECT * FROM vehicle WHERE vehicle_id = ?";
+        Vehicle vehicle = null;
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, vehicle_id);
+            ResultSet rs = pstmt.executeQuery();
+            if(rs.next()) {
+                switch (rs.getString("type")) {
+                    case "car":
+                        vehicle = getCar(vehicle_id);
+                        break;
+                    case "motorcycle":
+                        vehicle = getMotorcycle(vehicle_id);
+                        break;
+                    case "bicycle":
+                        vehicle = getBicycle(vehicle_id);
+                        break;
+                    case "scooter":
+                        vehicle = getScooter(vehicle_id);
+                        break;
+                    default:
+                        System.out.println("Error: Invalid vehicle type");
+                        break;
+                }
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return vehicle;
+    }
+
+    private Car getCar(int vehicle_id){
+        String SQL = "SELECT * FROM vehicle INNER JOIN car ON vehicle.vehicle_id = car.vehicle_id WHERE vehicle.vehicle_id = ?";
+        Car car = null;
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, vehicle_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                car = new Car(
+                    rs.getString("color"),
+                    rs.getString("brand"),
+                    rs.getString("model"),
+                    rs.getString("carType"),
+                    rs.getString("type"),
+                    rs.getInt("numberOfSeats"),
+                    rs.getString("licensePlate"),
+                    rs.getInt("kilometers"),
+                    rs.getInt("dailyCost"),
+                    rs.getBoolean("isRented"),
+                    rs.getString("status")
+                );
+                car.setId(rs.getInt("vehicle_id"));
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return car;
+    }
+
+    private Motorcycle getMotorcycle(int vehicle_id){
+        String SQL = "SELECT * FROM vehicle INNER JOIN motorcycle ON vehicle.vehicle_id = motorcycle.vehicle_id WHERE vehicle.vehicle_id = ?";
+        Motorcycle motorcycle = null;
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, vehicle_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                motorcycle = new Motorcycle(
+                    rs.getString("color"),
+                    rs.getString("brand"),
+                    rs.getString("model"),
+                    rs.getString("licensePlate"),
+                    rs.getInt("kilometers"),
+                    rs.getInt("dailyCost"),
+                    rs.getBoolean("isRented"),
+                    rs.getString("status")
+                );
+                motorcycle.setId(rs.getInt("vehicle_id"));
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return motorcycle;
+    }
+
+    private Bicycle getBicycle(int vehicle_id){
+        String SQL = "SELECT * FROM vehicle INNER JOIN bicycle ON vehicle.vehicle_id = bicycle.vehicle_id WHERE vehicle.vehicle_id = ?";
+        Bicycle bicycle = null;
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, vehicle_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                bicycle = new Bicycle(
+                    rs.getString("color"),
+                    rs.getString("brand"),
+                    rs.getString("model"),
+                    rs.getString("type"),
+                    rs.getString("uniqueNumber"),
+                    rs.getInt("kilometers"),
+                    rs.getInt("dailyCost"),
+                    rs.getBoolean("isRented"),
+                    rs.getString("status")
+                );
+                bicycle.setId(rs.getInt("vehicle_id"));
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return bicycle;
+    }
+
+    private Scooter getScooter(int vehicle_id){
+        String SQL = "SELECT * FROM vehicle INNER JOIN scooter ON vehicle.vehicle_id = scooter.vehicle_id WHERE vehicle.vehicle_id = ?";
+        Scooter scooter = null;
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, vehicle_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                scooter = new Scooter(
+                    rs.getString("color"),
+                    rs.getString("brand"),
+                    rs.getString("model"),
+                    rs.getString("type"),
+                    rs.getString("uniqueNumber"),
+                    rs.getInt("kilometers"),
+                    rs.getInt("dailyCost"),
+                    rs.getBoolean("isRented"),
+                    rs.getString("status")
+                );
+                scooter.setId(rs.getInt("vehicle_id"));
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return scooter;
+    }
+
+    public String income(Date starDate,Date endDate,String type){
+        String SQL = "SELECT SUM(totalCost) AS income FROM rental WHERE rentDate >= ? AND returnDate <= ? AND rentStatus = 'returned' AND vehicle_id IN (SELECT vehicle_id FROM "+type+")";
+        String income = "";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setDate(1, starDate);
+            pstmt.setDate(2, endDate);
+            ResultSet rs = pstmt.executeQuery();
+            if(rs.next()) {
+                income = rs.getString("income");
+                if (income == null) {
+                    income = "0";
+                }
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+            return "Error";
+        }
+        return income;
+    }
+
+    public String mostRentedVehicle(String type){
+        String SQL = "SELECT vehicle_id,COUNT(vehicle_id) AS count FROM rental WHERE vehicle_id IN (SELECT vehicle_id FROM "+type+") GROUP BY vehicle_id ORDER BY count DESC LIMIT 1";
+        String mostRentedVehicle = "";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            ResultSet rs = pstmt.executeQuery();
+            if(rs.next()) {
+                mostRentedVehicle = rs.getString("vehicle_id");
+                if (mostRentedVehicle == null) {
+                    mostRentedVehicle = "0";
+                }
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+            return "Error";
+        }
+        return mostRentedVehicle;
     }
 }
 

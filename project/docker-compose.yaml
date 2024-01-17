@@ -13,14 +13,5 @@ services:
       POSTGRES_PASSWORD: maou
       POSTGRES_DB: 360
 
-  # tomcat:
-  #   image: tomcat:latest
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - ./webapps:/usr/local/tomcat/webapps
-  #   environment:
-  #     - CATALINA_OPTS=-Xms512M -Xmx1024M
-
 volumes:
   dbdata:

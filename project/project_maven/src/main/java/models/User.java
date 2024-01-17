@@ -11,10 +11,11 @@ public class User {
     private String phoneNumber;
     private String driverLicense;
     private String creditCardNumber;
+    private int age;
     private int[]  rentIds;
-    
 
-    public User(String username, String password, String email, String firstName, String lastName, String address, String phoneNumber, String driverLicense, String creditCardNumber) {
+
+    public User(String username, String password, String email, String firstName, String lastName, String address, String phoneNumber, String driverLicense, String creditCardNumber,int age) {
         this.username = username;
         this.password = password;
         this.email = email;
@@ -24,6 +25,7 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.driverLicense = driverLicense;
         this.creditCardNumber = creditCardNumber;
+        this.age = age;
 
     }
 
@@ -50,6 +52,14 @@ public class User {
             }
         }
         rentIds=temp;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public int getAge() {
+        return age;
     }
 
     public void setId(int id) {
