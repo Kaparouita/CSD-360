@@ -17,7 +17,7 @@ public class Main {
         db.connect();
         db.initializeDatabase();
 
-//       db.initDbWithRandomData();
+       db.initDbWithRandomData();
 
 //        List<Motorcycle> motorcycleList =  db.getMotorcycleList(true);
 //        for (Motorcycle motorcycle : motorcycleList) {

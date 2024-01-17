@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.io.IOException;
 import java.sql.Date;
+import java.sql.Array;
 
 import models.User;
 import models.Vehicle;
@@ -97,7 +98,7 @@ public class Database {
     
 
     public User saveUser(User user) {
-        String SQL = "INSERT INTO users(username, password, email, firstname, lastname, address, phonenumber, driverlicense, creditcardnumber,age) VALUES(?,?,?,?,?,?,?,?,?,?)";
+        String SQL = "INSERT INTO users(username, password, email, firstname, lastname, address, phonenumber, driverlicense, creditcardnumber,age,rent_ids) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)) {
@@ -111,6 +112,7 @@ public class Database {
             pstmt.setString(8, user.getDriverLicense());
             pstmt.setString(9, user.getCreditCardNumber());
             pstmt.setInt(10, user.getAge());
+            pstmt.setArray(11, conn.createArrayOf("integer", user.getRentIntegerIds()));
             pstmt.executeUpdate();
 
             ResultSet rs = pstmt.getGeneratedKeys();
@@ -410,12 +412,14 @@ public class Database {
         String SQL = "INSERT INTO rental(user_id,vehicle_id,rentDate,returnDate,rentStatus,ensurance,totalCost) VALUES(?,?,?,?,?,?,?)";
         String SQLvehicle = "UPDATE vehicle SET isRented = true WHERE vehicle_id = ?";
         String SQLgetVehicle = "SELECT * FROM vehicle WHERE vehicle_id = ?";
+        String SQLupdateUser = "UPDATE users SET rent_ids = ? WHERE user_id = ?";
         String resp= "";
 
         try (Connection conn = connect();
             PreparedStatement pstmt = conn.prepareStatement(SQL);
             PreparedStatement pstmtvehicle = conn.prepareStatement(SQLvehicle);
-            PreparedStatement pstmtgetVehicle = conn.prepareStatement(SQLgetVehicle)) {
+            PreparedStatement pstmtgetVehicle = conn.prepareStatement(SQLgetVehicle);
+            PreparedStatement pstmtupdateUser = conn.prepareStatement(SQLupdateUser)) {
             pstmt.setInt(1, rent.getUserId());
             pstmt.setInt(2, rent.getVehicleId());
             pstmt.setTimestamp(3, rent.getRentDate());
@@ -455,10 +459,14 @@ public class Database {
                 resp += "Total fee: " + totalFee+"\n";
                 System.out.println("Total fee: " + totalFee);
                 pstmt.setInt(7, totalFee);
+
+                user.addRentId(rent.getId());
+                pstmtupdateUser.setArray(1, conn.createArrayOf("integer", user.getRentIntegerIds()));
             }
 
             pstmtvehicle.executeUpdate();
             pstmt.executeUpdate();
+            pstmtupdateUser.executeUpdate();
 
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
@@ -479,12 +487,14 @@ public class Database {
         String SQLrent = "SELECT * FROM rental WHERE rent_id = ? AND rentStatus = 'rented'";
         String SQLvehicle = "UPDATE vehicle SET isRented = false WHERE vehicle_id = ? ";
         String SQL = "UPDATE rental SET rentStatus = 'returned', totalCost = ? WHERE rent_id = ?";
+        String SQLupdateUser = "UPDATE users SET rent_ids = ? WHERE user_id = ?";
         String resp = "";
 
         try (Connection conn = connect();
             PreparedStatement pstmt = conn.prepareStatement(SQL);
             PreparedStatement pstmtrent = conn.prepareStatement(SQLrent);
-            PreparedStatement pstmtvehicle = conn.prepareStatement(SQLvehicle)) {
+            PreparedStatement pstmtvehicle = conn.prepareStatement(SQLvehicle);
+            PreparedStatement pstmtupdateUser = conn.prepareStatement(SQLupdateUser)){
             pstmtrent.setInt(1, rent_id);
             ResultSet rent = pstmtrent.executeQuery();
             if (rent.next()) {
@@ -504,6 +514,12 @@ public class Database {
                 pstmtvehicle.setInt(1, vehicle_id);
                 pstmtvehicle.executeUpdate();
                 
+                User user = getUser(rent.getInt("user_id"));
+                user.removeRentId(rent_id);
+                pstmtupdateUser.setArray(1, conn.createArrayOf("integer", user.getRentIntegerIds()));
+                pstmtupdateUser.setInt(2, rent.getInt("user_id"));
+                pstmtupdateUser.executeUpdate();
+
                 pstmt.setInt(2, rent_id);
                 pstmt.executeUpdate();
             }
@@ -527,13 +543,15 @@ public class Database {
         String SQLgetVehicle = "SELECT * FROM vehicle WHERE vehicle_id = ?";
         String SQLsimilarVehicle = "SELECT * FROM vehicle WHERE type = ? AND isRented = false AND status = 'available' LIMIT 1";
         String SQLreplaceVehicle = "UPDATE rental SET vehicle_id = ? WHERE rent_id = ?";
+        String SQLupdateUser = "UPDATE users SET rent_ids = ? WHERE user_id = ?";
 
         try (Connection conn = connect();
             PreparedStatement pstmtvehicle = conn.prepareStatement(SQLupdateVehicle);
             PreparedStatement pstmtrent = conn.prepareStatement(SQLrent);
             PreparedStatement pstmtgetVehicle = conn.prepareStatement(SQLgetVehicle);
             PreparedStatement pstmtsimilarVehicle = conn.prepareStatement(SQLsimilarVehicle);
-            PreparedStatement pstmtreplaceVehicle = conn.prepareStatement(SQLreplaceVehicle)) {
+            PreparedStatement pstmtreplaceVehicle = conn.prepareStatement(SQLreplaceVehicle);
+            PreparedStatement pstmtupdateUser = conn.prepareStatement(SQLupdateUser)) {
             pstmtrent.setInt(1, rent_id);
             ResultSet rent = pstmtrent.executeQuery();
             if (rent.next()) {
@@ -550,6 +568,12 @@ public class Database {
                     pstmtreplaceVehicle.setInt(1, rs2.getInt("vehicle_id"));
                     pstmtreplaceVehicle.setInt(2, rent_id);
                     pstmtreplaceVehicle.executeUpdate();
+
+                    User user = getUser(rent.getInt("user_id"));
+                    user.removeRentId(rent_id);
+                    pstmtupdateUser.setArray(1, conn.createArrayOf("integer", user.getRentIntegerIds()));
+                    pstmtupdateUser.setInt(2, rent.getInt("user_id"));
+                    pstmtupdateUser.executeUpdate();
                 }
             }
         } catch (SQLException ex) {
@@ -557,9 +581,10 @@ public class Database {
         }
     }
 
-    public void accidentVehicle(int rent_id){
+    public String accidentVehicle(int rent_id){
         String SQLrent = "SELECT * FROM rental WHERE rent_id = ? AND rentStatus = 'rented'";
         String SQLtotalCost = "UPDATE rental SET totalCost = ? WHERE rent_id = ?";
+        String resp = "";
 
 
         try (Connection conn = connect();
@@ -570,6 +595,7 @@ public class Database {
             if (rent.next()) {
                 if (rent.getBoolean("ensurance")) {
                     damageVehicle(rent_id);
+                    resp += "Vehicle is insured, no extra fee for damage!";
                 } else {
                     System.out.println("User doesnt have ensurance!");
                     int totalCost = rent.getInt("totalCost") * 3;
@@ -577,11 +603,13 @@ public class Database {
                     pstmttotalCost.setInt(2, rent_id);
                     pstmttotalCost.executeUpdate();
                     damageVehicle(rent_id);
+                    resp += "Vehicle is not insured, extra fee for damage is : " + totalCost;
                 }
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
         }
+        return resp;
     }
 
     public List <Rent> rentCalendarList(Date start_date,Date end_date){

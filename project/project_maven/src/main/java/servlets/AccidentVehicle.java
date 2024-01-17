@@ -20,11 +20,11 @@ public class AccidentVehicle extends HttpServlet{
                 return;
             }
 
-            System.out.println("Inform about accident on vehicle: RentId = " + rentId);
 
-            db.accidentVehicle(rentId);
+           String resp = db.accidentVehicle(rentId);
+           resp += "\n Inform about accident on vehicle: RentId = " + rentId;
 
-            response.getWriter().write("Inform about accident on vehicle: RentId = " + rentId);
+            response.getWriter().write(resp);
         }catch (Exception e) {
             response.getWriter().write("Error processing request.");
         }

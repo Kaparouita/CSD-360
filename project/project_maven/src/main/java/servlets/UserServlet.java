@@ -32,7 +32,8 @@ public class UserServlet extends HttpServlet {
         String jsonData = sb.toString();
 
         Gson gson = new Gson();
-        User user = gson.fromJson(jsonData, User.class);
+        User json = gson.fromJson(jsonData, User.class);
+        User user = new User(json.getUsername(),json.getPassword(),json.getEmail(),json.getFirstName(),json.getLastName(),json.getAddress(),json.getPhoneNumber(),json.getDriverLicense(),json.getCreditCardNumber(),json.getAge());
 
         // Now, you have a User object populated with JSON data
         System.out.println("Registering user: Name = " + user.getFirstName() + ", Email = " + user.getEmail());

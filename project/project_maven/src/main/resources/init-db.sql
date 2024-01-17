@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS Users (
     phoneNumber VARCHAR(100),
     driverLicense VARCHAR(100),
     creditCardNumber VARCHAR(100),
-    age INT
+    age INT,
+    rent_ids INT[]
 );
 CREATE TABLE IF NOT EXISTS Vehicle (
     vehicle_id SERIAL PRIMARY KEY,

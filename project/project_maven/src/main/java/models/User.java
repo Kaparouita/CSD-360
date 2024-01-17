@@ -1,5 +1,7 @@
 package models;
 
+import java.sql.Array;
+
 public class User {
     private int id;
     private String username;
@@ -12,7 +14,7 @@ public class User {
     private String driverLicense;
     private String creditCardNumber;
     private int age;
-    private int[]  rentIds;
+    private int[]  rentIds ;
 
 
     public User(String username, String password, String email, String firstName, String lastName, String address, String phoneNumber, String driverLicense, String creditCardNumber,int age) {
@@ -27,6 +29,7 @@ public class User {
         this.creditCardNumber = creditCardNumber;
         this.age = age;
 
+        this.rentIds = new int[1];
     }
 
     public void addRentId(int rentId){
@@ -43,6 +46,10 @@ public class User {
     }
 
     public void removeRentId(int id){
+        if (rentIds.length==1){
+            rentIds = new int[0];
+            return;
+        }
         int[] temp = new int[rentIds.length-1];
         int j=0;
         for(int i=0;i<rentIds.length;i++){
@@ -52,6 +59,17 @@ public class User {
             }
         }
         rentIds=temp;
+    }
+
+    public Integer[] getRentIntegerIds() {
+        if (rentIds.length==0){
+            return new Integer[0];
+        }
+        Integer[] integerArray = new Integer[rentIds.length];
+        for (int i = 0; i < rentIds.length; i++) {
+            integerArray[i] = rentIds[i];
+        }
+        return integerArray;
     }
 
     public void setAge(int age) {
