@@ -6,6 +6,7 @@ public class Car extends Vehicle {
     private String licensePlate;
     private String carType;
 
+
     public Car( String color,  String brand, String model,String carType ,String vehicleType, int numberOfSeats, String licensePlate, int kilometers, int dailyCost,Boolean isRented,String status) {
         super( color, brand, model, "car", kilometers, dailyCost,isRented,status);
         this.numberOfSeats = numberOfSeats;

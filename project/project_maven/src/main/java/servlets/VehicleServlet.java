@@ -57,4 +57,16 @@ public class VehicleServlet extends HttpServlet {
         System.out.println("Vehicle " + vehicle + " created successfully");
     }
 
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int id = Integer.parseInt(request.getParameter("vehicle_id"));
+
+        Gson gson = new Gson();
+        Vehicle vehicle = db.getVehicle(id);
+        String json = gson.toJson(vehicle);
+
+        response.setContentType("application/json");
+        response.getWriter().println(json);
+    }
+
 }
