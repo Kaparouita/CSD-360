@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<Context docBase="/home/giorgis/me/csd/360/project/webapps">
-  <Resources cacheMaxSize="10240">
-    <PreResources base="/home/giorgis/me/csd/360/project/project_maven/target/classes" className="org.apache.catalina.webresources.DirResourceSet" webAppMount="/WEB-INF/classes"/>
-    <PostResources base="/home/giorgis/.m2/repository/org/postgresql/postgresql/42.5.1/postgresql-42.5.1.jar" className="org.apache.catalina.webresources.FileResourceSet" webAppMount="/WEB-INF/lib/postgresql-42.5.1.jar"/>
-    <PostResources base="/home/giorgis/.m2/repository/org/checkerframework/checker-qual/3.5.0/checker-qual-3.5.0.jar" className="org.apache.catalina.webresources.FileResourceSet" webAppMount="/WEB-INF/lib/checker-qual-3.5.0.jar"/>
-    <PostResources base="/home/giorgis/.m2/repository/com/google/code/gson/gson/2.8.9/gson-2.8.9.jar" className="org.apache.catalina.webresources.FileResourceSet" webAppMount="/WEB-INF/lib/gson-2.8.9.jar"/>
-  </Resources>
-</Context>
